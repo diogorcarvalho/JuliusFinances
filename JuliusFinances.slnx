@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="JuliusFinances.Api/JuliusFinances.Api.csproj" />
+  <Project Path="JuliusFinances.Core/JuliusFinances.Core.csproj" />
+  <Project Path="JuliusFinances.Tests/JuliusFinances.Tests.csproj" />
+</Solution>

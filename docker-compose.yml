@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: julius_postgres
+    environment:
+      POSTGRES_USER: julius_user
+      POSTGRES_PASSWORD: julius_secure_password_2026
+      POSTGRES_DB: julius_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
