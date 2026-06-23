@@ -162,9 +162,6 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Rota padrão de teste
-app.MapGet("/", () => "Hello World!");
-
 // 7. Mapeamento de Rotas Modulares (Minimal APIs)
 app.MapAuthEndpoints();
 
