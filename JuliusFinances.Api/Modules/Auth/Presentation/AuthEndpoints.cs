@@ -14,8 +14,20 @@ public static class AuthEndpoints
         var group = app.MapGroup("/auth")
                        .WithTags("Auth");
 
-        group.MapPost("/register", RegisterAsync);
-        group.MapPost("/login", LoginAsync);
+        group.MapPost("/register", RegisterAsync)
+             .WithName("RegisterUser")
+             .WithSummary("Registrar um novo usuário")
+             .WithDescription("Cria uma nova conta de usuário no sistema JuliusFinances validando os dados fornecidos de acordo com as regras de negócio.")
+             .Produces<RegisterUserResponse>(StatusCodes.Status201Created)
+             .ProducesProblem(StatusCodes.Status400BadRequest)
+             .ProducesProblem(StatusCodes.Status409Conflict);
+
+        group.MapPost("/login", LoginAsync)
+             .WithName("LoginUser")
+             .WithSummary("Autenticar usuário")
+             .WithDescription("Realiza o login de um usuário existente e retorna as credenciais junto com o token JWT de acesso.")
+             .Produces<LoginResponse>(StatusCodes.Status200OK)
+             .ProducesProblem(StatusCodes.Status400BadRequest);
 
         return app;
     }

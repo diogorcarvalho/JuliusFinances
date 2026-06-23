@@ -49,37 +49,48 @@ A solução está estruturada em três projetos principais com suporte a banco d
 
 ---
 
-## 2. Infraestrutura e Banco de Dados (Desenvolvimento)
+## 2. Infraestrutura e Bancos de Dados por Ambiente
 
-### Docker (PostgreSQL)
-Um banco de dados PostgreSQL 17 (imagem alpine) está configurado e em execução através do arquivo `docker-compose.yml` na raiz do projeto com os seguintes parâmetros:
-* **Container Name:** `julius_postgres`
-* **Porta:** `5432:5432`
-* **Usuário:** `julius_user`
-* **Banco:** `julius_db`
-* **Senha:** `julius_secure_password_2026`
+A aplicação está configurada para suportar dois ambientes distintos (Desenvolvimento e Produção), operando com strings de conexão e portas HTTP/HTTPS separadas.
 
-### Conexão no .NET
-A string de conexão ativa está configurada em `JuliusFinances.Api/appsettings.Development.json`:
-```json
-"ConnectionStrings": {
-  "DefaultConnection": "Host=localhost;Port=5432;Database=julius_db;Username=julius_user;Password=julius_secure_password_2026"
-}
-```
+### 2.1. Ambiente de Desenvolvimento (Development)
+* **Banco de Dados:** `julius_finances_db_dev`
+* **Usuário:** `postgres`
+* **Senha:** `postgres`
+* **String de Conexão:** `Host=localhost;Port=5432;Database=julius_finances_db_dev;Username=postgres;Password=postgres`
+* **Portas da API:** `5290` (HTTP) e `7085` (HTTPS)
+* **Configurações:** Definidas no arquivo `JuliusFinances.Api/appsettings.Development.json` e ativas sob o perfil de inicialização `http` ou `https`.
+
+### 2.2. Ambiente de Produção (Production)
+* **Banco de Dados:** `julius_finances_db_prod`
+* **Usuário:** `postgres`
+* **Senha:** `postgres`
+* **String de Conexão:** `Host=localhost;Port=5432;Database=julius_finances_db_prod;Username=postgres;Password=postgres`
+* **Portas da API:** `5291` (HTTP) e `7086` (HTTPS)
+* **Configurações:** Definidas no arquivo `JuliusFinances.Api/appsettings.Production.json` e ativas sob o perfil de inicialização `production`.
+
+### 2.3. Execução Automática de Migrações (EF Core)
+Ao iniciar a aplicação em qualquer um dos ambientes, uma rotina de inicialização automática no `Program.cs` aplica as migrações pendentes no banco de dados do respectivo ambiente ativo usando `dbContext.Database.Migrate()`.
 
 ---
 
-## 3. Como Executar a Solução Atual
+## 3. Como Executar a Solução
 
-1. **Subir o banco de dados (Docker):**
-   ```bash
-   docker compose up -d
-   ```
-2. **Executar a API (Modo Desenvolvimento):**
-   ```bash
-   dotnet run --project JuliusFinances.Api/JuliusFinances.Api.csproj
-   ```
-3. **Rodar os Testes:**
-   ```bash
-   dotnet test
-   ```
+Assegure-se de que o seu servidor PostgreSQL local (na porta 5432) esteja rodando e com o usuário superuser `postgres` criado com a senha `postgres`.
+
+### 3.1. Executar a API em Ambiente de Desenvolvimento (DEV)
+Para iniciar a API utilizando a porta `5290` e o banco de desenvolvimento `julius_finances_db_dev`:
+```bash
+dotnet run --project JuliusFinances.Api/JuliusFinances.Api.csproj --launch-profile http
+```
+
+### 3.2. Executar a API em Ambiente de Produção (PROD)
+Para iniciar a API utilizando a porta `5291` e o banco de produção `julius_finances_db_prod`:
+```bash
+dotnet run --project JuliusFinances.Api/JuliusFinances.Api.csproj --launch-profile production
+```
+
+### 3.3. Rodar os Testes Automatizados
+```bash
+dotnet test
+```
