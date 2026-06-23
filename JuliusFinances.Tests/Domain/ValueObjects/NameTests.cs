@@ -9,7 +9,10 @@ public class NameTests
     [InlineData("Diogo Silva", "Diogo Silva")]
     [InlineData("diogo silva", "Diogo Silva")]
     [InlineData("DIOGO SILVA", "Diogo Silva")]
-    [InlineData("  diogo   silva  ", "Diogo   Silva")] // Trim + title case das palavras
+    [InlineData("  diogo   silva  ", "Diogo Silva")] // Trim + title case das palavras + normalização de espaços
+    [InlineData("diogo da silva e souza", "Diogo da Silva e Souza")] // Preposições e conjunções minúsculas
+    [InlineData("MARIA DO CARMO DOS SANTOS", "Maria do Carmo dos Santos")] // Preposições de maiúsculo para minúsculo
+    [InlineData("Deodoro da Fonseca", "Deodoro da Fonseca")] // Primeiro nome mantém maiúscula mesmo se for preposição
     public void Constructor_WithValidName_ShouldCreateInstanceAndCapitalize(string input, string expected)
     {
         // Act
