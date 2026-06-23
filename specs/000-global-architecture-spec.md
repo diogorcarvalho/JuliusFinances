@@ -80,3 +80,24 @@ O desenvolvimento do JuliusFinances deve ser guiado por princípios de S.O.L.I.D
 * **L - Liskov Substitution (Substituição de Liskov):** Subclasses devem poder substituir suas superclasses perfeitamente sem alterar o comportamento esperado do sistema.
 * **I - Interface Segregation (Segregação de Interfaces):** Interfaces devem ser específicas e focadas. É melhor ter várias interfaces pequenas e coesas do que uma única interface genérica que obrigue os clientes a implementar métodos desnecessários.
 * **D - Dependency Inversion (Inversão de Dependência):** Módulos de alto nível não devem depender de módulos de baixo nível; ambos devem depender de abstrações. Classes concretas devem depender de interfaces, facilitando a injeção de dependências e a criação de mocks em testes automatizados.
+
+---
+
+## 7. Configurações de Rede, Escuta de Endpoints (Bindings) e CORS
+
+Para garantir que a API seja acessível para outros dispositivos na rede doméstica/local, bem como em futuros deploys em ambientes conteinerizados (Docker/Kubernetes) ou servidores de Homelab, as seguintes diretrizes de infraestrutura de rede são obrigatórias:
+
+### 7.1. Precedência de Configurações do Kestrel
+No ecossistema ASP.NET Core, há uma ordem estrita de precedência sobre as definições de portas e URLs de escuta:
+1. **Configurações em arquivos JSON (`appsettings.json`, `appsettings.Development.json`):** A chave `"Kestrel"` definida nestes arquivos possui **prioridade absoluta** e sobrescreve tanto o arquivo `launchSettings.json` quanto parâmetros passados por linha de comando (`--urls`).
+2. **Parâmetros de linha de comando (`--urls` ou `--port`):** Configurações passadas no startup do binário ou comando de execução.
+3. **Arquivo de perfis de inicialização (`Properties/launchSettings.json`):** Lido apenas pelo ferramental CLI de desenvolvimento (`dotnet run`, IDEs).
+4. **Variáveis de Ambiente (`ASPNETCORE_URLS`):** Sobrescreve as configurações de menor prioridade.
+
+### 7.2. Regra de Ligação Global (Universal Bindings)
+* É terminantemente proibido manter o valor de escuta padrão `localhost` ou `127.0.0.1` de forma fixa nas chaves `"Kestrel"` dos arquivos `appsettings.*.json` do projeto, uma vez que isso restringe a API apenas ao loopback local impedindo conexões remotas.
+* A configuração de escuta em desenvolvimento e produção deve utilizar o caractere curinga **`*`** (ex: `http://*:5290` ou `https://*:7085`), forçando a API a escutar em todas as interfaces de rede IPv4 e IPv6 disponíveis na máquina física ou container.
+
+### 7.3. Política de CORS (Cross-Origin Resource Sharing)
+* Com a API acessível remotamente na rede local, clientes Web (frontend executando em navegadores de outras máquinas da rede local) sofrerão bloqueio de requisições de origem cruzada.
+* O `Program.cs` deve registrar de forma explícita o serviço de CORS e ativar o middleware correspondente (`app.UseCors()`) antes de habilitar autenticação e autorização (`app.UseAuthentication()` e `app.UseAuthorization()`). Em ambientes de desenvolvimento local, a política de CORS deve ser flexível, permitindo qualquer origem (`AllowAnyOrigin()`), método e cabeçalho para garantir facilidade de testes.

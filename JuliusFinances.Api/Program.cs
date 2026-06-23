@@ -62,6 +62,17 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+// Configuração de CORS para permitir acessos de outros computadores da rede local
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // 5. Injeção de Dependências (Casos de Uso e Serviços)
 // Core
 builder.Services.AddScoped<RegisterUserUseCase>();
@@ -147,6 +158,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 

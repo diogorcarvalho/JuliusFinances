@@ -108,7 +108,7 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Staging"))
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "JuliusFinances API v1");
         // Opcional: Define a rota onde o Swagger UI estará acessível.
-        // Ex: "swagger" deixará acessível em http://localhost:5000/swagger
+        // Ex: "swagger" deixará acessível em http://localhost:5290/swagger (ou pelo IP da rede local, ex: http://192.168.15.25:5290/swagger)
         options.RoutePrefix = "swagger";
     });
 }
@@ -198,7 +198,7 @@ Após aplicar as configurações especificadas:
    dotnet run --project JuliusFinances.Api/JuliusFinances.Api.csproj
    ```
 3. **Acesse o Painel:**
-   Abra o navegador no endereço: `http://localhost:<porta>/swagger` (onde `<porta>` é a porta configurada no perfil de desenvolvimento, ex: `http://localhost:5000/swagger` ou `https://localhost:5001/swagger`).
+   Abra o navegador no endereço: `http://localhost:5290/swagger` (localmente) ou pelo IP do servidor na rede doméstica se estiver acessando de outro computador (ex: `http://192.168.15.25:5290/swagger`).
 4. **Fluxo de Teste da Autenticação:**
    * Envie uma requisição válida para `/auth/register` no Swagger UI para criar um usuário.
    * Envie uma requisição de login em `/auth/login` para receber o token de acesso.

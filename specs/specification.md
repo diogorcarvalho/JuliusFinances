@@ -58,7 +58,7 @@ A aplicação está configurada para suportar dois ambientes distintos (Desenvol
 * **Usuário:** `postgres`
 * **Senha:** `postgres`
 * **String de Conexão:** `Host=localhost;Port=5432;Database=julius_finances_db_dev;Username=postgres;Password=postgres`
-* **Portas da API:** `5290` (HTTP) e `7085` (HTTPS)
+* **Portas da API:** Escuta universal em `http://*:5290` e `https://*:7085` (disponível para outros computadores da rede local)
 * **Configurações:** Definidas no arquivo `JuliusFinances.Api/appsettings.Development.json` e ativas sob o perfil de inicialização `http` ou `https`.
 
 ### 2.2. Ambiente de Produção (Production)
@@ -66,10 +66,14 @@ A aplicação está configurada para suportar dois ambientes distintos (Desenvol
 * **Usuário:** `postgres`
 * **Senha:** `postgres`
 * **String de Conexão:** `Host=localhost;Port=5432;Database=julius_finances_db_prod;Username=postgres;Password=postgres`
-* **Portas da API:** `5291` (HTTP) e `7086` (HTTPS)
+* **Portas da API:** Escuta universal em `http://*:5291` e `https://*:7086` (disponível para outros computadores da rede local)
 * **Configurações:** Definidas no arquivo `JuliusFinances.Api/appsettings.Production.json` e ativas sob o perfil de inicialização `production`.
 
-### 2.3. Execução Automática de Migrações (EF Core)
+### 2.3. Acessibilidade na Rede Local e CORS
+A API está configurada para escutar em todas as interfaces de rede (`*` ou `0.0.0.0`), permitindo que outros dispositivos na rede doméstica acessem o sistema diretamente pelo endereço IP local do servidor (ex: `http://<IP-DO-HOMELAB>:5290`). 
+Para que navegadores de outros computadores acessem os endpoints de forma bem-sucedida a partir de um cliente frontend separado, a aplicação possui o middleware de **CORS** habilitado no `Program.cs` (`app.UseCors()`), liberando origens cruzadas, cabeçalhos e métodos de forma flexível em ambiente de desenvolvimento.
+
+### 2.4. Execução Automática de Migrações (EF Core)
 Ao iniciar a aplicação em qualquer um dos ambientes, uma rotina de inicialização automática no `Program.cs` aplica as migrações pendentes no banco de dados do respectivo ambiente ativo usando `dbContext.Database.Migrate()`.
 
 ---
