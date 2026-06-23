@@ -146,7 +146,7 @@ using (var scope = app.Services.CreateScope())
 // 6. Configuração do Pipeline HTTP
 app.UseExceptionHandler(); // Ativa o pipeline de IExceptionHandler global
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("EnableSwagger"))
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>

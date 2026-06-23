@@ -96,12 +96,12 @@ builder.Services.AddSwaggerGen(options =>
 ```
 
 ### 2.3. Configuração do Pipeline HTTP (Middleware)
-O pipeline do Swagger deve ser exposto **apenas em ambientes não-produtivos** (como `Development` ou `Staging`), evitando expor os contratos internos e a interface de testes interativa em ambientes produtivos.
+O pipeline do Swagger é exposto no ambiente de desenvolvimento (`Development`) ou em outros ambientes (como `Production`) mediante a chave de configuração dinâmica `"EnableSwagger": true`. Isso permite que o painel seja acessado de forma segura e flexível em múltiplos ambientes.
 
 Adicione o middleware logo após a instanciação do `app`:
 
 ```csharp
-if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Staging"))
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("EnableSwagger"))
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
