@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using JuliusFinances.Core.Common.Domain;
 using JuliusFinances.Core.Modules.Auth.Domain.Exceptions;
+using JuliusFinances.Core.Modules.FinancesSetup.Domain.Exceptions;
 
 namespace JuliusFinances.Api.Common.Errors;
 
@@ -28,6 +29,16 @@ public class GlobalExceptionHandler : IExceptionHandler
                 StatusCodes.Status409Conflict,
                 "E-mail já cadastrado",
                 emailEx.Message),
+
+            CategoryNameAlreadyExistsException catNameEx => (
+                StatusCodes.Status409Conflict,
+                "Categoria já cadastrada",
+                catNameEx.Message),
+
+            CategoryForbiddenAccessException catForbidEx => (
+                StatusCodes.Status403Forbidden,
+                "Acesso proibido",
+                catForbidEx.Message),
 
             DomainException domainEx => (
                 StatusCodes.Status400BadRequest,

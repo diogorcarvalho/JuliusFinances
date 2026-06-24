@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using JuliusFinances.Core.Modules.Auth.Domain.Entities;
+using JuliusFinances.Core.Modules.FinancesSetup.Domain.Entities;
 
 namespace JuliusFinances.Api.Common.Database;
 
@@ -9,6 +10,7 @@ namespace JuliusFinances.Api.Common.Database;
 public class JuliusDbContext : DbContext
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<Category> Categories => Set<Category>();
 
     public JuliusDbContext(DbContextOptions<JuliusDbContext> options) : base(options) { }
 

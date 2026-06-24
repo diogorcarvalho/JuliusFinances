@@ -8,12 +8,15 @@ using JuliusFinances.Core.Common.Security;
 using JuliusFinances.Core.Modules.Auth.Application.Interfaces;
 using JuliusFinances.Core.Modules.Auth.Application.UseCases.Login;
 using JuliusFinances.Core.Modules.Auth.Application.UseCases.RegisterUser;
+using JuliusFinances.Core.Modules.FinancesSetup.Domain.Repositories;
 using JuliusFinances.Api.Common.Database;
 using JuliusFinances.Api.Common.Errors;
 using JuliusFinances.Api.Common.Security;
 using JuliusFinances.Api.Modules.Auth.Infrastructure.Persistence;
 using JuliusFinances.Api.Modules.Auth.Infrastructure.Services;
 using JuliusFinances.Api.Modules.Auth.Presentation;
+using JuliusFinances.Api.Modules.FinancesSetup.Infrastructure.Persistence;
+using JuliusFinances.Api.Modules.FinancesSetup.Presentation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,6 +85,7 @@ builder.Services.AddScoped<LoginUseCase>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 // Registrar suporte ao Swagger / API Explorer
 builder.Services.AddEndpointsApiExplorer();
@@ -141,6 +145,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<JuliusDbContext>();
     dbContext.Database.Migrate();
+    DbInitializer.SeedCategories(dbContext);
 }
 
 // 6. Configuração do Pipeline HTTP
@@ -164,5 +169,6 @@ app.UseAuthorization();
 
 // 7. Mapeamento de Rotas Modulares (Minimal APIs)
 app.MapAuthEndpoints();
+app.MapCategoryEndpoints();
 
 app.Run();
