@@ -19,8 +19,8 @@ public class GlobalExceptionHandler : IExceptionHandler
     }
 
     public async ValueTask<bool> TryHandleAsync(
-        HttpContext httpContext, 
-        Exception exception, 
+        HttpContext httpContext,
+        Exception exception,
         CancellationToken cancellationToken)
     {
         var (statusCode, title, detail) = exception switch
@@ -39,6 +39,16 @@ public class GlobalExceptionHandler : IExceptionHandler
                 StatusCodes.Status403Forbidden,
                 "Acesso proibido",
                 catForbidEx.Message),
+
+            AccountNameAlreadyExistsException accNameEx => (
+                StatusCodes.Status409Conflict,
+                "Conta já cadastrada",
+                accNameEx.Message),
+
+            AccountForbiddenAccessException accForbidEx => (
+                StatusCodes.Status403Forbidden,
+                "Acesso proibido",
+                accForbidEx.Message),
 
             DomainException domainEx => (
                 StatusCodes.Status400BadRequest,

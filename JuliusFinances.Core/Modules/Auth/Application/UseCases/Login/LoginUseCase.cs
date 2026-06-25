@@ -30,8 +30,8 @@ public class LoginUseCase
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
 
     public LoginUseCase(
-        IUserRepository userRepository, 
-        IPasswordHasher passwordHasher, 
+        IUserRepository userRepository,
+        IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator)
     {
         _userRepository = userRepository;

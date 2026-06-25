@@ -11,6 +11,7 @@ public class JuliusDbContext : DbContext
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Account> Accounts => Set<Account>();
 
     public JuliusDbContext(DbContextOptions<JuliusDbContext> options) : base(options) { }
 

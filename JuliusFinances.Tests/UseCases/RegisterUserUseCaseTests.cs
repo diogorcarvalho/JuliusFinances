@@ -52,13 +52,25 @@ public class RegisterUserUseCaseTests
         public bool Verify(string plainTextPassword, string hashedPassword) => hashedPassword == $"hashed_{plainTextPassword}";
     }
 
+    private class FakeDomainEventPublisher : IDomainEventPublisher
+    {
+        public readonly List<IDomainEvent> PublishedEvents = new();
+
+        public Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default) where TEvent : IDomainEvent
+        {
+            PublishedEvents.Add(domainEvent);
+            return Task.CompletedTask;
+        }
+    }
+
     [Fact]
     public async Task ExecuteAsync_WithValidRequest_ShouldCreateUserAndReturnResponse()
     {
         // Arrange
         var repository = new InMemoryUserRepository();
         var hasher = new FakePasswordHasher();
-        var useCase = new RegisterUserUseCase(repository, hasher);
+        var publisher = new FakeDomainEventPublisher();
+        var useCase = new RegisterUserUseCase(repository, hasher, publisher);
         var request = new RegisterUserRequest("Diogo Silva", "diogo@exemplo.com", "SenhaSegura123!");
 
         // Act
@@ -75,6 +87,11 @@ public class RegisterUserUseCaseTests
         Assert.Equal("Diogo Silva", savedUser.Name.Value);
         Assert.Equal("diogo@exemplo.com", savedUser.Email.Value);
         Assert.Equal("hashed_SenhaSegura123!", savedUser.Password.HashValue);
+
+        // Verify event published
+        Assert.Single(publisher.PublishedEvents);
+        var publishedEvent = Assert.IsType<JuliusFinances.Core.Modules.Auth.Domain.Events.UserRegisteredEvent>(publisher.PublishedEvents[0]);
+        Assert.Equal(response.Id, publishedEvent.UserId);
     }
 
     [Fact]
@@ -83,7 +100,8 @@ public class RegisterUserUseCaseTests
         // Arrange
         var repository = new InMemoryUserRepository();
         var hasher = new FakePasswordHasher();
-        
+        var publisher = new FakeDomainEventPublisher();
+
         // Cadastra um usuário pré-existente
         var existingUser = new User(
             UserId.Unique(),
@@ -92,7 +110,7 @@ public class RegisterUserUseCaseTests
             new Password("some_hash"));
         await repository.AddAsync(existingUser);
 
-        var useCase = new RegisterUserUseCase(repository, hasher);
+        var useCase = new RegisterUserUseCase(repository, hasher, publisher);
         var request = new RegisterUserRequest("Novo Nome", "duplicado@exemplo.com", "SenhaSegura123!");
 
         // Act & Assert
@@ -106,7 +124,8 @@ public class RegisterUserUseCaseTests
         // Arrange
         var repository = new InMemoryUserRepository();
         var hasher = new FakePasswordHasher();
-        var useCase = new RegisterUserUseCase(repository, hasher);
+        var publisher = new FakeDomainEventPublisher();
+        var useCase = new RegisterUserUseCase(repository, hasher, publisher);
         var request = new RegisterUserRequest("Diogo Silva", "diogo@exemplo.com", "senha");
 
         // Act & Assert

@@ -7,6 +7,6 @@ namespace JuliusFinances.Core.Modules.FinancesSetup.Domain.Exceptions;
 /// </summary>
 public class CategoryForbiddenAccessException : DomainException
 {
-    public CategoryForbiddenAccessException() 
+    public CategoryForbiddenAccessException()
         : base("Você não possui permissão para acessar ou modificar esta categoria.") { }
 }

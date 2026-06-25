@@ -2,7 +2,9 @@ using JuliusFinances.Core.Modules.Auth.Application.Interfaces;
 using JuliusFinances.Core.Modules.Auth.Domain.Entities;
 using JuliusFinances.Core.Modules.Auth.Domain.ValueObjects;
 using JuliusFinances.Core.Modules.Auth.Domain.Exceptions;
+using JuliusFinances.Core.Modules.Auth.Domain.Events;
 using JuliusFinances.Core.Common.Security;
+using JuliusFinances.Core.Common.Domain;
 
 namespace JuliusFinances.Core.Modules.Auth.Application.UseCases.RegisterUser;
 
@@ -23,11 +25,13 @@ public class RegisterUserUseCase
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IDomainEventPublisher _domainEventPublisher;
 
-    public RegisterUserUseCase(IUserRepository userRepository, IPasswordHasher passwordHasher)
+    public RegisterUserUseCase(IUserRepository userRepository, IPasswordHasher passwordHasher, IDomainEventPublisher domainEventPublisher)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
+        _domainEventPublisher = domainEventPublisher;
     }
 
     public async Task<RegisterUserResponse> ExecuteAsync(RegisterUserRequest request, CancellationToken cancellationToken = default)
@@ -54,6 +58,9 @@ public class RegisterUserUseCase
 
         // 6. Salva a entidade User no banco de dados.
         await _userRepository.AddAsync(user, cancellationToken);
+
+        // 7. Publica o evento de domínio de registro de usuário de forma desacoplada
+        await _domainEventPublisher.PublishAsync(new UserRegisteredEvent(user.Id.Value), cancellationToken);
 
         return new RegisterUserResponse(user.Id.Value, user.Name.Value, user.Email.Value);
     }

@@ -17,6 +17,10 @@ using JuliusFinances.Api.Modules.Auth.Infrastructure.Services;
 using JuliusFinances.Api.Modules.Auth.Presentation;
 using JuliusFinances.Api.Modules.FinancesSetup.Infrastructure.Persistence;
 using JuliusFinances.Api.Modules.FinancesSetup.Presentation;
+using JuliusFinances.Core.Common.Domain;
+using JuliusFinances.Core.Modules.Auth.Domain.Events;
+using JuliusFinances.Core.Modules.FinancesSetup.Application.EventHandlers;
+using JuliusFinances.Api.Common.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,6 +90,9 @@ builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
+builder.Services.AddScoped<IDomainEventHandler<UserRegisteredEvent>, UserRegisteredEventHandler>();
 
 // Registrar suporte ao Swagger / API Explorer
 builder.Services.AddEndpointsApiExplorer();
@@ -170,5 +177,6 @@ app.UseAuthorization();
 // 7. Mapeamento de Rotas Modulares (Minimal APIs)
 app.MapAuthEndpoints();
 app.MapCategoryEndpoints();
+app.MapAccountEndpoints();
 
 app.Run();
