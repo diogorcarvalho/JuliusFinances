@@ -91,6 +91,7 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
 builder.Services.AddScoped<IDomainEventHandler<UserRegisteredEvent>, UserRegisteredEventHandler>();
 
@@ -178,5 +179,6 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapCategoryEndpoints();
 app.MapAccountEndpoints();
+app.MapTransactionEndpoints();
 
 app.Run();

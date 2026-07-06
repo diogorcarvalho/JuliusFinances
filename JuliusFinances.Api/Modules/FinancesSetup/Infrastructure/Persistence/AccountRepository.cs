@@ -44,10 +44,9 @@ public class AccountRepository : IAccountRepository
         return accounts.Any(a => a.Name.GetNormalizedForComparison() == normalizedInput);
     }
 
-    public Task<bool> HasLinkedTransactionsAsync(AccountId id, CancellationToken cancellationToken = default)
+    public async Task<bool> HasLinkedTransactionsAsync(AccountId id, CancellationToken cancellationToken = default)
     {
-        // Transações e transferências não estão implementadas neste estágio do sistema
-        return Task.FromResult(false);
+        return await _dbContext.Transactions.AnyAsync(t => t.AccountId == id && !t.IsDeleted, cancellationToken);
     }
 
     public async Task AddAsync(Account account, CancellationToken cancellationToken = default)

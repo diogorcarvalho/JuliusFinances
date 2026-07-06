@@ -45,10 +45,9 @@ public class CategoryRepository : ICategoryRepository
         return categories.Any(c => c.Name.GetNormalizedForComparison() == normalizedInput);
     }
 
-    public Task<bool> HasLinkedTransactionsAsync(CategoryId id, CancellationToken cancellationToken = default)
+    public async Task<bool> HasLinkedTransactionsAsync(CategoryId id, CancellationToken cancellationToken = default)
     {
-        // Transações ainda não estão implementadas neste estágio do sistema
-        return Task.FromResult(false);
+        return await _dbContext.Transactions.AnyAsync(t => t.CategoryId == id && !t.IsDeleted, cancellationToken);
     }
 
     public async Task AddAsync(Category category, CancellationToken cancellationToken = default)
