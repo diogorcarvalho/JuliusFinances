@@ -46,7 +46,10 @@ public class AccountRepository : IAccountRepository
 
     public async Task<bool> HasLinkedTransactionsAsync(AccountId id, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Transactions.AnyAsync(t => t.AccountId == id && !t.IsDeleted, cancellationToken);
+        var hasTransactions = await _dbContext.Transactions.AnyAsync(t => t.AccountId == id && !t.IsDeleted, cancellationToken);
+        if (hasTransactions) return true;
+
+        return await _dbContext.Transfers.AnyAsync(t => (t.OriginAccountId == id || t.DestinationAccountId == id) && !t.IsDeleted, cancellationToken);
     }
 
     public async Task AddAsync(Account account, CancellationToken cancellationToken = default)

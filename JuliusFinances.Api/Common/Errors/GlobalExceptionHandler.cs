@@ -55,6 +55,11 @@ public class GlobalExceptionHandler : IExceptionHandler
                 "Acesso proibido",
                 txForbidEx.Message),
 
+            TransferForbiddenAccessException transferForbidEx => (
+                StatusCodes.Status403Forbidden,
+                "Acesso proibido",
+                transferForbidEx.Message),
+
             DomainException domainEx => (
                 StatusCodes.Status400BadRequest,
                 "Erro de Regra de Negócio",
