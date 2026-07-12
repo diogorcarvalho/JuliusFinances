@@ -182,5 +182,6 @@ app.MapCategoryEndpoints();
 app.MapAccountEndpoints();
 app.MapTransactionEndpoints();
 app.MapTransferEndpoints();
+app.MapDashboardEndpoints();
 
 app.Run();

@@ -7,29 +7,58 @@ import {
   ArrowRight,
   PlusCircle,
   Wallet,
-  Calendar
+  Calendar,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { apiClient } from '@/core/api/client';
+
+interface RecentTransaction {
+  id: string;
+  description: string;
+  amount: number;
+  type: string;
+  categoryName: string;
+  date: string;
+}
+
+interface CategoryExpense {
+  categoryId: string;
+  categoryName: string;
+  totalSpent: number;
+}
+
+interface DashboardSummary {
+  balance: number;
+  incomes: number;
+  expenses: number;
+  recentTransactions: RecentTransaction[];
+  categoryExpenses: CategoryExpense[];
+}
 
 export default function DashboardView() {
   const [userName, setUserName] = useState('Usuário');
-  
-  // Dados de mock realistas para o dashboard inicial
-  const summary = {
-    balance: 5240.50,
-    incomes: 8500.00,
-    expenses: 3259.50,
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const BUDGET_LIMITS: { [key: string]: number } = {
+    'alimentacao': 1200.00,
+    'habitacao': 2500.00,
+    'entretenimento': 300.00,
   };
 
-  const recentTransactions = [
-    { id: '1', description: 'Salário Mensal', amount: 8500.00, type: 'income', category: 'Salário', date: '2026-07-05' },
-    { id: '2', description: 'Aluguel do Apartamento', amount: 2200.00, type: 'expense', category: 'Habitação', date: '2026-07-06' },
-    { id: '3', description: 'Supermercado Imperial', amount: 659.50, type: 'expense', category: 'Alimentação', date: '2026-07-07' },
-    { id: '4', description: 'Assinatura de Streaming', amount: 55.00, type: 'expense', category: 'Entretenimento', date: '2026-07-07' },
-    { id: '5', description: 'Combustível Posto Ipiranga', amount: 345.00, type: 'expense', category: 'Transporte', date: '2026-07-07' },
-  ];
+  const BUDGET_LABELS: { [key: string]: string } = {
+    'alimentacao': 'Alimentação',
+    'habitacao': 'Habitação',
+    'entretenimento': 'Entretenimento',
+  };
 
   useEffect(() => {
+    let isMounted = true;
+
+    // 1. Carregar nome do usuário do localStorage
     try {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -39,8 +68,35 @@ export default function DashboardView() {
         }
       }
     } catch (e) {
-      console.error(e);
+      console.error('Falha ao ler usuário do localStorage:', e);
     }
+
+    // 2. Buscar resumo consolidado do Dashboard da API
+    const fetchDashboardSummary = async () => {
+      try {
+        setIsLoading(true);
+        setError('');
+        const response = await apiClient.get<DashboardSummary>('/dashboard/summary');
+        if (isMounted) {
+          setSummary(response.data);
+        }
+      } catch (err: any) {
+        console.error('Erro ao buscar dados do dashboard:', err);
+        if (isMounted) {
+          setError('Não foi possível carregar os dados financeiros do servidor. Por favor, verifique sua conexão.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchDashboardSummary();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const formatCurrency = (value: number) => {
@@ -51,9 +107,93 @@ export default function DashboardView() {
   };
 
   const formatDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split('-');
-    return `${day}/${month}/${year}`;
+    try {
+      const date = new Date(dateStr);
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        timeZone: 'UTC'
+      }).format(date);
+    } catch {
+      return dateStr;
+    }
   };
+
+  const getFormattedCurrentMonth = () => {
+    const date = new Date();
+    const formatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
+    const formatted = formatter.format(date);
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  };
+
+  const getProgressColor = (percentage: number) => {
+    if (percentage >= 90) return 'bg-rose-500';
+    if (percentage >= 70) return 'bg-amber-500';
+    return 'bg-indigo-500';
+  };
+
+  const normalizeString = (str: string) => 
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+  const getSpentForCategory = (label: string) => {
+    if (!summary) return 0;
+    const normalizedLabel = normalizeString(label);
+    const match = summary.categoryExpenses.find(
+      (ce) => normalizeString(ce.categoryName) === normalizedLabel
+    );
+    return match ? match.totalSpent : 0;
+  };
+
+  const budgets = Object.keys(BUDGET_LIMITS).map(key => {
+    const label = BUDGET_LABELS[key];
+    const limit = BUDGET_LIMITS[key];
+    const spent = getSpentForCategory(label);
+    const percentage = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
+    
+    return {
+      key,
+      label,
+      limit,
+      spent,
+      percentage
+    };
+  });
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold tracking-wide">
+            Carregando resumo financeiro...
+          </p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error || !summary) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 max-w-md mx-auto text-center">
+          <div className="w-16 h-16 bg-rose-50 dark:bg-rose-950/30 rounded-2xl flex items-center justify-center text-rose-600 dark:text-rose-400 shadow-md">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-2">Falha na Conexão</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+            {error || 'Ocorreu um erro desconhecido ao processar os dados.'}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition-all shadow-md shadow-indigo-600/10"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -69,7 +209,7 @@ export default function DashboardView() {
         </div>
         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl shadow-sm self-start">
           <Calendar className="w-5 h-5 text-indigo-500" />
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Julho de 2026</span>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{getFormattedCurrentMonth()}</span>
         </div>
       </div>
 
@@ -83,8 +223,10 @@ export default function DashboardView() {
             <p className="text-2xl md:text-3xl font-extrabold text-slate-950 dark:text-white leading-none">
               {formatCurrency(summary.balance)}
             </p>
-            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-              Saúde financeira positiva
+            <span className={`text-xs font-semibold flex items-center gap-1 ${
+              summary.balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+            }`}>
+              {summary.balance >= 0 ? 'Saúde financeira positiva' : 'Atenção ao saldo negativo'}
             </span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-inner">
@@ -100,7 +242,7 @@ export default function DashboardView() {
             <p className="text-2xl md:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 leading-none">
               {formatCurrency(summary.incomes)}
             </p>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Previsão totalmente quitada</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Entradas consolidadas</span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner">
             <TrendingUp className="w-6 h-6" />
@@ -115,8 +257,10 @@ export default function DashboardView() {
             <p className="text-2xl md:text-3xl font-extrabold text-rose-600 dark:text-rose-400 leading-none">
               {formatCurrency(summary.expenses)}
             </p>
-            <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold">
-              Comprometeu 38,3% da receita
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              {summary.incomes > 0 
+                ? `Comprometeu ${((summary.expenses / summary.incomes) * 100).toFixed(1)}% das receitas` 
+                : 'Nenhuma receita registrada'}
             </span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-inner">
@@ -143,34 +287,46 @@ export default function DashboardView() {
             </Link>
           </div>
 
-          <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-            {recentTransactions.map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                    transaction.type === 'income' 
-                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' 
-                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
-                  }`}>
-                    {transaction.type === 'income' ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{transaction.description}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{transaction.category}</span>
-                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                      <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{formatDate(transaction.date)}</span>
+          {summary.recentTransactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">Nenhuma transação recente encontrada.</p>
+              <Link 
+                to="/transactions" 
+                className="text-xs text-indigo-500 hover:text-indigo-600 font-bold mt-2 hover:underline"
+              >
+                Adicione sua primeira transação
+              </Link>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {summary.recentTransactions.map((transaction) => (
+                <div key={transaction.id} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      transaction.type === 'income' 
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' 
+                        : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'
+                    }`}>
+                      {transaction.type === 'income' ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{transaction.description}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{transaction.categoryName}</span>
+                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{formatDate(transaction.date)}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className={`text-sm font-extrabold shrink-0 ${
+                    transaction.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                  }`}>
+                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                  </div>
                 </div>
-                <div className={`text-sm font-extrabold shrink-0 ${
-                  transaction.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                }`}>
-                  {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Lado Direito: Atalhos / Saúde de Orçamento */}
@@ -199,37 +355,22 @@ export default function DashboardView() {
           {/* Progresso de Metas/Orçamentos */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 shadow-sm">
             <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">Orçamento Limite</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4">Seu progresso total de gastos de Julho</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4">Seu progresso total de gastos do mês</p>
             <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                  <span>Alimentação</span>
-                  <span>{formatCurrency(659.50)} / {formatCurrency(1200.00)}</span>
+              {budgets.map((budget) => (
+                <div key={budget.key}>
+                  <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    <span>{budget.label}</span>
+                    <span>{formatCurrency(budget.spent)} / {formatCurrency(budget.limit)}</span>
+                  </div>
+                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full ${getProgressColor(budget.percentage)} rounded-full transition-all duration-500`} 
+                      style={{ width: `${budget.percentage}%` }} 
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: '54.9%' }} />
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                  <span>Habitação</span>
-                  <span>{formatCurrency(2200.00)} / {formatCurrency(2500.00)}</span>
-                </div>
-                <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full" style={{ width: '88%' }} />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                  <span>Entretenimento</span>
-                  <span>{formatCurrency(55.00)} / {formatCurrency(300.00)}</span>
-                </div>
-                <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: '18.3%' }} />
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
