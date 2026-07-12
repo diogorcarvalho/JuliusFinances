@@ -12,6 +12,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import { apiClient } from '@/core/api/client';
 
 interface RecentTransaction {
@@ -57,6 +58,7 @@ export default function DashboardView() {
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
     // 1. Carregar nome do usuário do localStorage
     try {
@@ -76,11 +78,17 @@ export default function DashboardView() {
       try {
         setIsLoading(true);
         setError('');
-        const response = await apiClient.get<DashboardSummary>('/dashboard/summary');
+        const response = await apiClient.get<DashboardSummary>('/dashboard/summary', {
+          signal: controller.signal
+        });
         if (isMounted) {
           setSummary(response.data);
         }
       } catch (err: any) {
+        if (axios.isCancel(err)) {
+          // Requisição cancelada intencionalmente, ignorar o erro silenciosamente
+          return;
+        }
         console.error('Erro ao buscar dados do dashboard:', err);
         if (isMounted) {
           setError('Não foi possível carregar os dados financeiros do servidor. Por favor, verifique sua conexão.');
@@ -96,6 +104,7 @@ export default function DashboardView() {
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, []);
 

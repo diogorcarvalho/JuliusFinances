@@ -165,8 +165,11 @@ private static async Task<IResult> GetSummaryAsync(
 
 ## 3. Integração e Fluxo do Frontend
 
-### 3.1. Chamada de API e Estados
+### 3.1. Chamada de API, Estados e Prevenção de Chamadas Duplicadas (React Strict Mode)
 - `DashboardView.tsx` deve invocar o endpoint `/dashboard/summary` via `apiClient`.
+- **Prevenção de Requisições Duplicadas (React Strict Mode):** Uma vez que o React Strict Mode em desenvolvimento monta e desmonta componentes duas vezes na inicialização, o `useEffect` do Dashboard deve usar um `AbortController` nativo e passar o `signal` na chamada do `apiClient.get`.
+- No retorno do `useEffect` (cleanup), deve-se invocar `controller.abort()` para cancelar requisições pendentes e evitar vazamentos de memória ou sobrecarga de requisições concorrentes.
+- No bloco `catch`, erros de cancelamento intencional (`axios.isCancel(err)`) devem ser ignorados silenciosamente para não disparar falsos alertas de erro para o usuário.
 - Implementar estados de carregamento (`isLoading`) e skeletons nos componentes de cards de resumo, listas e progressos para evitar saltos visuais.
 - Tratar cenários de erro de conexão exibindo alertas amigáveis e não-bloqueantes.
 
