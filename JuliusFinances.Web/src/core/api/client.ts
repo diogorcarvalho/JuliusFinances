@@ -83,6 +83,11 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 0. Ignorar requisições canceladas intencionalmente para não disparar falsos alertas de erro de rede
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
     const { response, code } = error;
 
     // 1. Tratamento de Desautenticação (410, ou 401 Unauthorized)

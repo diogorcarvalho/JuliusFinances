@@ -7,6 +7,7 @@ import LoginView from '@/modules/auth/views/LoginView';
 import RegisterView from '@/modules/auth/views/RegisterView';
 import DashboardView from '@/modules/dashboard/views/DashboardView';
 import TransactionsView from '@/modules/transactions/views/TransactionsView';
+import AccountsView from '@/modules/accounts/views/AccountsView';
 import { AlertCircle, X } from 'lucide-react';
 
 interface ToastMessage {
@@ -58,7 +59,7 @@ export default function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardView />} />
             <Route path="/transactions" element={<TransactionsView />} />
-            <Route path="/accounts" element={<div className="p-6 dark:text-white">Contas & Carteiras em breve</div>} />
+            <Route path="/accounts" element={<AccountsView />} />
           </Route>
 
           {/* Rota Fallback */}
