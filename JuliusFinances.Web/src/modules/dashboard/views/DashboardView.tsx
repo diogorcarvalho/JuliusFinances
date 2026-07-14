@@ -369,8 +369,8 @@ export default function DashboardView() {
             </div>
           </div>
 
-          {/* Progresso de Metas/Orçamentos */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 shadow-sm">
+          {/* Progresso de Metas/Orçamentos - Implementação futura */}
+          {/* <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 shadow-sm">
             <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">Orçamento Limite</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4">Seu progresso total de gastos do mês</p>
             <div className="space-y-4">
@@ -389,7 +389,7 @@ export default function DashboardView() {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </Layout>
