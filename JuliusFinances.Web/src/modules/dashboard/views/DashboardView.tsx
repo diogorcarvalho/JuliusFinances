@@ -9,7 +9,8 @@ import {
   Wallet,
   Calendar,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Tag
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -343,7 +344,7 @@ export default function DashboardView() {
           {/* Atalhos Rápidos */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6 shadow-sm">
             <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-4">Ações Rápidas</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
               <Link
                 to="/transactions"
                 className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/20 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 hover:border-indigo-200 dark:hover:border-indigo-900 text-center transition-all group"
@@ -357,6 +358,13 @@ export default function DashboardView() {
               >
                 <Wallet className="w-6 h-6 text-indigo-500 mb-2 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Minhas Contas</span>
+              </Link>
+              <Link
+                to="/categories"
+                className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/20 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 hover:border-indigo-200 dark:hover:border-indigo-900 text-center transition-all group"
+              >
+                <Tag className="w-6 h-6 text-indigo-500 mb-2 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Categorias</span>
               </Link>
             </div>
           </div>

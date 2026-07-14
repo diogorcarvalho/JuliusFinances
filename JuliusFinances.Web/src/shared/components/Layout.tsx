@@ -9,7 +9,8 @@ import {
   Moon, 
   User,
   Menu,
-  X
+  X,
+  Tag
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -48,6 +49,7 @@ export default function Layout({ children }: LayoutProps) {
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Transações', path: '/transactions', icon: ArrowLeftRight },
     { label: 'Contas', path: '/accounts', icon: Wallet },
+    { label: 'Categorias', path: '/categories', icon: Tag },
   ];
 
   return (
