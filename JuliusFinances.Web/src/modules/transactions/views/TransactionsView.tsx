@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Layout from '@/shared/components/Layout';
+import { useConfirm } from '@/shared/context/ConfirmContext';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -19,6 +20,7 @@ interface Transaction {
 }
 
 export default function TransactionsView() {
+  const confirm = useConfirm();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,8 +77,15 @@ export default function TransactionsView() {
     setDate(new Date().toISOString().split('T')[0]);
   };
 
-  const handleDeleteTransaction = (id: string) => {
-    if (confirm('Tem certeza de que deseja excluir esta transação?')) {
+  const handleDeleteTransaction = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Excluir Transação',
+      message: 'Tem certeza de que deseja excluir esta transação?',
+      type: 'danger',
+      confirmText: 'Excluir',
+      isBlocking: true,
+    });
+    if (confirmed) {
       setTransactions((prev) => prev.filter((t) => t.id !== id));
     }
   };

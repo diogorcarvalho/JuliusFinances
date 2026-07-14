@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '@/shared/components/Layout';
+import { useConfirm } from '@/shared/context/ConfirmContext';
 import { 
   Wallet, 
   Landmark, 
@@ -23,6 +24,7 @@ interface Account {
 }
 
 export default function AccountsView() {
+  const confirm = useConfirm();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -185,7 +187,14 @@ export default function AccountsView() {
 
   const handleDeleteAccount = async (id: string, accountName: string) => {
     const confirmationText = `Deseja realmente excluir/arquivar a conta "${accountName}"?\n\nObservação: Caso esta conta possua transações registradas, ela será arquivada (arquivamento lógico) para preservar o histórico e a integridade de seus relatórios financeiros.`;
-    if (!confirm(confirmationText)) {
+    const confirmed = await confirm({
+      title: 'Excluir ou Arquivar Conta',
+      message: confirmationText,
+      type: 'warning',
+      confirmText: 'Confirmar',
+      isBlocking: true,
+    });
+    if (!confirmed) {
       return;
     }
 

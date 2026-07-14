@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '@/shared/components/Layout';
+import { useConfirm } from '@/shared/context/ConfirmContext';
 import { 
   Tag, 
   Plus, 
@@ -103,6 +104,7 @@ function getCategoryVisuals(name: string, flowType: 'Income' | 'Expense' | 'Both
 }
 
 export default function CategoriesView() {
+  const confirm = useConfirm();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -208,7 +210,14 @@ export default function CategoriesView() {
 
   const handleDeleteCategory = async (id: string, categoryName: string) => {
     const confirmationText = `Deseja realmente excluir a categoria "${categoryName}"?`;
-    if (!confirm(confirmationText)) {
+    const confirmed = await confirm({
+      title: 'Excluir Categoria',
+      message: confirmationText,
+      type: 'danger',
+      confirmText: 'Excluir',
+      isBlocking: true,
+    });
+    if (!confirmed) {
       return;
     }
 
