@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 using JuliusFinances.Core.Modules.FinancesSetup.Domain.Entities;
 using JuliusFinances.Core.Modules.FinancesSetup.Domain.ValueObjects;
 using JuliusFinances.Core.Modules.FinancesSetup.Domain.Enums;
@@ -73,13 +74,58 @@ public static class AccountEndpoints
     private static async Task<IResult> ListAsync(
         ClaimsPrincipal claimsPrincipal,
         [FromServices] IAccountRepository accountRepository,
+        [FromServices] JuliusDbContext dbContext,
         CancellationToken cancellationToken)
     {
         var userId = GetUserId(claimsPrincipal);
         if (userId == null) return Results.Unauthorized();
 
         var accounts = await accountRepository.GetByUserIdAsync(userId.Value, cancellationToken);
-        var response = accounts.Select(MapToResponse);
+        var accountList = accounts.ToList();
+        var accountIds = accountList.Select(a => a.Id).ToList();
+
+        // Buscar somas das transações ativas agrupadas por conta e tipo de fluxo
+        var transactionSums = await dbContext.Transactions
+            .Where(t => accountIds.Contains(t.AccountId) && !t.IsDeleted)
+            .GroupBy(t => new { t.AccountId, t.Type })
+            .Select(g => new { AccountId = g.Key.AccountId, Type = g.Key.Type, Sum = g.Sum(t => t.Money.Amount) })
+            .ToListAsync(cancellationToken);
+
+        // Buscar somas das transferências ativas (origem e destino) agrupadas por conta
+        var sentTransfersSums = await dbContext.Transfers
+            .Where(t => accountIds.Contains(t.OriginAccountId) && !t.IsDeleted)
+            .GroupBy(t => t.OriginAccountId)
+            .Select(g => new { AccountId = g.Key, Sum = g.Sum(t => t.Money.Amount) })
+            .ToListAsync(cancellationToken);
+
+        var receivedTransfersSums = await dbContext.Transfers
+            .Where(t => accountIds.Contains(t.DestinationAccountId) && !t.IsDeleted)
+            .GroupBy(t => t.DestinationAccountId)
+            .Select(g => new { AccountId = g.Key, Sum = g.Sum(t => t.Money.Amount) })
+            .ToListAsync(cancellationToken);
+
+        var response = accountList.Select(account =>
+        {
+            var incomes = transactionSums
+                .Where(t => t.AccountId == account.Id && t.Type == TransactionType.Income)
+                .Sum(t => t.Sum);
+
+            var expenses = transactionSums
+                .Where(t => t.AccountId == account.Id && t.Type == TransactionType.Expense)
+                .Sum(t => t.Sum);
+
+            var sent = sentTransfersSums
+                .Where(t => t.AccountId == account.Id)
+                .Sum(t => t.Sum);
+
+            var received = receivedTransfersSums
+                .Where(t => t.AccountId == account.Id)
+                .Sum(t => t.Sum);
+
+            var balance = account.InitialBalance + incomes - expenses + received - sent;
+
+            return MapToResponse(account, balance);
+        });
 
         return Results.Ok(response);
     }
@@ -88,6 +134,7 @@ public static class AccountEndpoints
         [FromRoute] Guid id,
         ClaimsPrincipal claimsPrincipal,
         [FromServices] IAccountRepository accountRepository,
+        [FromServices] JuliusDbContext dbContext,
         CancellationToken cancellationToken)
     {
         var userId = GetUserId(claimsPrincipal);
@@ -101,7 +148,25 @@ public static class AccountEndpoints
             throw new AccountForbiddenAccessException();
         }
 
-        return Results.Ok(MapToResponse(account));
+        var incomes = await dbContext.Transactions
+            .Where(t => t.AccountId == account.Id && !t.IsDeleted && t.Type == TransactionType.Income)
+            .SumAsync(t => t.Money.Amount, cancellationToken);
+
+        var expenses = await dbContext.Transactions
+            .Where(t => t.AccountId == account.Id && !t.IsDeleted && t.Type == TransactionType.Expense)
+            .SumAsync(t => t.Money.Amount, cancellationToken);
+
+        var sent = await dbContext.Transfers
+            .Where(t => t.OriginAccountId == account.Id && !t.IsDeleted)
+            .SumAsync(t => t.Money.Amount, cancellationToken);
+
+        var received = await dbContext.Transfers
+            .Where(t => t.DestinationAccountId == account.Id && !t.IsDeleted)
+            .SumAsync(t => t.Money.Amount, cancellationToken);
+
+        var balance = account.InitialBalance + incomes - expenses + received - sent;
+
+        return Results.Ok(MapToResponse(account, balance));
     }
 
     private static async Task<IResult> CreateAsync(
@@ -144,6 +209,7 @@ public static class AccountEndpoints
         [FromBody] UpdateAccountRequest request,
         ClaimsPrincipal claimsPrincipal,
         [FromServices] IAccountRepository accountRepository,
+        [FromServices] JuliusDbContext dbContext,
         CancellationToken cancellationToken)
     {
         var userId = GetUserId(claimsPrincipal);
@@ -186,7 +252,25 @@ public static class AccountEndpoints
         account.Update(newName, accountType, request.InitialBalance, hasTransactions);
         accountRepository.Update(account);
 
-        return Results.Ok(MapToResponse(account));
+        var incomes = await dbContext.Transactions
+            .Where(t => t.AccountId == account.Id && !t.IsDeleted && t.Type == TransactionType.Income)
+            .SumAsync(t => t.Money.Amount, cancellationToken);
+
+        var expenses = await dbContext.Transactions
+            .Where(t => t.AccountId == account.Id && !t.IsDeleted && t.Type == TransactionType.Expense)
+            .SumAsync(t => t.Money.Amount, cancellationToken);
+
+        var sent = await dbContext.Transfers
+            .Where(t => t.OriginAccountId == account.Id && !t.IsDeleted)
+            .SumAsync(t => t.Money.Amount, cancellationToken);
+
+        var received = await dbContext.Transfers
+            .Where(t => t.DestinationAccountId == account.Id && !t.IsDeleted)
+            .SumAsync(t => t.Money.Amount, cancellationToken);
+
+        var balance = account.InitialBalance + incomes - expenses + received - sent;
+
+        return Results.Ok(MapToResponse(account, balance));
     }
 
     private static async Task<IResult> DeleteAsync(
@@ -234,20 +318,21 @@ public static class AccountEndpoints
         return claim != null && Guid.TryParse(claim.Value, out var userId) ? userId : null;
     }
 
-    private static AccountResponse MapToResponse(Account account)
+    private static AccountResponse MapToResponse(Account account, decimal? balance = null)
     {
         return new AccountResponse(
             account.Id.Value,
             account.Name.Value,
             account.Type.ToString(),
-            account.InitialBalance);
+            account.InitialBalance,
+            balance ?? account.InitialBalance);
     }
 }
 
 /// <summary>
 /// Contrato de saída das respostas do módulo de contas.
 /// </summary>
-public record AccountResponse(Guid Id, string Name, string Type, decimal InitialBalance);
+public record AccountResponse(Guid Id, string Name, string Type, decimal InitialBalance, decimal Balance);
 
 /// <summary>
 /// Contrato de entrada para a criação de contas.

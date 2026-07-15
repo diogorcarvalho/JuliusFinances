@@ -21,6 +21,7 @@ interface Account {
   name: string;
   type: 'CheckingAccount' | 'SavingsAccount' | 'Investment' | 'Cash';
   initialBalance: number;
+  balance: number;
 }
 
 export default function AccountsView() {
@@ -331,14 +332,14 @@ export default function AccountsView() {
                 {/* Saldo da Conta */}
                 <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/50">
                   <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                    Saldo Inicial
+                    Saldo
                   </span>
                   <span className={`text-2xl font-extrabold tracking-tight block mt-1 ${
-                    account.initialBalance >= 0 
+                    account.balance >= 0 
                       ? 'text-slate-950 dark:text-white' 
                       : 'text-rose-600 dark:text-rose-400'
                   }`}>
-                    {formatCurrency(account.initialBalance)}
+                    {formatCurrency(account.balance)}
                   </span>
                 </div>
               </div>

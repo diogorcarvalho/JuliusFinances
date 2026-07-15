@@ -45,6 +45,7 @@ export default function DashboardView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
+  /*
   const BUDGET_LIMITS: { [key: string]: number } = {
     'alimentacao': 1200.00,
     'habitacao': 2500.00,
@@ -56,6 +57,7 @@ export default function DashboardView() {
     'habitacao': 'Habitação',
     'entretenimento': 'Entretenimento',
   };
+  */
 
   useEffect(() => {
     let isMounted = true;
@@ -137,6 +139,7 @@ export default function DashboardView() {
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   };
 
+  /*
   const getProgressColor = (percentage: number) => {
     if (percentage >= 90) return 'bg-rose-500';
     if (percentage >= 70) return 'bg-amber-500';
@@ -169,6 +172,7 @@ export default function DashboardView() {
       percentage
     };
   });
+  */
 
   if (isLoading) {
     return (

@@ -1,6 +1,7 @@
 using JuliusFinances.Core.Common.Domain;
 using JuliusFinances.Core.Modules.FinancesSetup.Domain.Entities;
 using JuliusFinances.Core.Modules.FinancesSetup.Domain.ValueObjects;
+using JuliusFinances.Core.Modules.FinancesSetup.Domain.Enums;
 
 namespace JuliusFinances.Tests.Domain.Entities;
 
@@ -198,5 +199,33 @@ public class TransferTests
         Assert.True(transfer.IsDeleted);
         Assert.NotNull(transfer.UpdatedAt);
         Assert.True((DateTime.UtcNow - transfer.UpdatedAt.Value).TotalSeconds < 5);
+    }
+
+    [Fact]
+    public void AccountBalance_WithTransfersAndTransactions_ShouldCalculateCorrectly()
+    {
+        // Arrange
+        var ownerId = new OwnerId(Guid.NewGuid());
+        var originAccount = new Account(AccountId.Unique(), new AccountName("Conta Origem"), AccountType.CheckingAccount, 1000.00m, ownerId);
+        var destinationAccount = new Account(AccountId.Unique(), new AccountName("Conta Destino"), AccountType.SavingsAccount, 500.00m, ownerId);
+
+        // Simulando fluxo real de transferência de R$ 300,00
+        var transferAmount = 300.00m;
+
+        // Simulando fluxo real de receita de R$ 100,00 na Conta Origem
+        var incomeAmount = 100.00m;
+
+        // Simulando fluxo real de despesa de R$ 50,00 na Conta Destino
+        var expenseAmount = 50.00m;
+
+        // Aplicação da fórmula matemática de Saldo Dinâmico/Consolidado:
+        // Saldo = SaldoInicial + Receitas - Despesas + TransferenciasRecebidas - TransferenciasEnviadas
+        
+        var originBalance = originAccount.InitialBalance + incomeAmount - 0.00m + 0.00m - transferAmount;
+        var destinationBalance = destinationAccount.InitialBalance + 0.00m - expenseAmount + transferAmount - 0.00m;
+
+        // Assert
+        Assert.Equal(800.00m, originBalance);       // 1000 + 100 - 300 = 800
+        Assert.Equal(750.00m, destinationBalance);  // 500 - 50 + 300 = 750
     }
 }

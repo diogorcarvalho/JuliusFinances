@@ -23,6 +23,7 @@ interface Account {
   name: string;
   type: 'CheckingAccount' | 'SavingsAccount' | 'Investment' | 'Cash';
   initialBalance: number;
+  balance: number;
 }
 
 interface Category {
